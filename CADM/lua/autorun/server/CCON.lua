@@ -23,7 +23,7 @@ end
 
 local function Send(t)
 	net.Start('CCON')
-	net.WriteTable(t)
+		net.WriteTable(t)
 	net.Broadcast()
 end
 

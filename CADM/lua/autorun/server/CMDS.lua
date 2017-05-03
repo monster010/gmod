@@ -1,9 +1,9 @@
 hook.Add('PlayerSay','CMDS',function(ply,str)
 
 	local word = string.Explode(' ',str)
-	local cmd = string.lower(word[1])
+	local cmd  = string.lower(word[1])
 	local pseudoent = easylua.FindEntity(word[2])
-	local validate = IsValid(pseudoent) and pseudoent:IsPlayer()
+	local validate  = IsValid(pseudoent) and pseudoent:IsPlayer()
 
     if cmd == '!goto' and validate then
 		if validate then
