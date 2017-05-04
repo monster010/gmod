@@ -1,10 +1,13 @@
 //AutoAddFile 
 
-//Where to search custom resources:
-local addon = true //allow addons including (only workshop!)
-local other = true //allow sound/models folders to include
+AAF = {}
 
-local what = 
+AAF.addon	  = true //allow addons including (only workshop!) //8192 MAX includes
+AAF.other 	  = true //allow sound/models folders to include
+AAF.massages  = true //massages in console
+
+//Where to search custom resources:
+AAF.include = 
 {
     'sound',
     'models',
@@ -12,80 +15,82 @@ local what =
     'resource',
 }
 
-// don't touch below.
-local function aafmsg(what) MsgC(Color(125,125,255),'[AAF]',Color(225,125,155),' '..what..'\n') end
+//Workshop id or full name of file
+AAF.blacklist =
+{
+	'id',
+}
 
-local tbl    = util.JSONToTable(file.Read('aaf.dat') or '')
-local addons = file.Find('addons/*','MOD')
-local try    = 0
+//-----------------\\
+--don't touch below--
 
-local function AddInit(tbl)
-
-    if addon then
-        for v,k in pairs(addons) do
-            local buff = ''
-            local st   = #k-12
-            for i=st,#k-4 do
-                buff = buff..k[i]
-            end
-            resource.AddWorkshop(buff)
-            aafmsg('Adding addon '..k)
-        end
-    end
-
-    local function read(path)
-        path=path or ''
-        local fs,ds = file.Find(path..'*','MOD')
-        for k,f in pairs(fs) do
-            if table.HasValue(tbl,path..f) or tbl[path..f] then continue end
-            resource.AddFile(path..f)
-            aafmsg('Adding '..path..f)
-        end 
-        for k,d in pairs(ds) do
-            read(path..d..'/') 
-        end
-    end 
-    
-    if other then
-        for i = 1,#what do
-            aafmsg('Reading '..what[i])
-            read(what[i]..'/')
-        end
-    end
-    
+function AAF.Msg(what) 
+	if !AAF.massages then return end
+	MsgC(Color(125,125,255),'[AAF]',Color(225,125,155),' '..what..'\n')
 end
 
-local function LoadGit()
+AAF.Try    = 0
+AAF.Data   = util.JSONToTable(file.Read('aaf.dat') or '')
+AAF.addons = file.Find('addons/*','MOD')
 
+function AAF.AddInit(tbl)
+	local function read(path)
+		path=path or ''
+		local fs,ds = file.Find(path..'*','MOD')
+		for k,f in pairs(fs) do
+			if (table.HasValue(tbl,path..f) or tbl[path..f]) or AAF.blacklist[path..f] then 
+				continue end
+			AAF.Msg('Adding '..path..f)
+			resource.AddSingleFile(path..f)
+		end 
+		for k,d in pairs(ds) do
+			read(path..d..'/') 
+		end
+	end
+	
+	AAF.Msg('Adding files, server may freeze for few seconds')
+	
+	if AAF.addon then
+		for v,k in pairs(AAF.addons) do
+			local buff = ''
+			local st   = #k-12
+			for i=st,#k-4 do buff = buff..k[i] end
+			resource.AddWorkshop(buff)
+			AAF.Msg('Adding addon '..k)
+		end
+	end
+
+	if AAF.other then
+		for i = 1,#AAF.include do
+			AAF.Msg('Reading '..AAF.include[i])
+			read(AAF.include[i]..'/')
+		end
+	end
+end
+
+function AAF.LoadGit()
     http.Fetch('https://raw.githubusercontent.com/DC144/gmod/master/AAF/data/aaf.dat',
         function(data)
-            if #data < 5 then 
-                if try >= 2 then return end 
-                try = try + 1 aafmsg('File error! Trying to Load again') LoadGit() 
+            if #data < 30 then 
+                if AAF.Try >= 2 then AAF.Msg('Something bad happend! Abort!') return end 
+                AAF.Try = AAF.Try + 1 AAF.Msg('File error! Trying to Load again') AAF.LoadGit() 
             else
-                aafmsg('Data secussfully loaded!')
+                AAF.Msg('Data secussfully loaded!')
                 file.Write('aaf.dat',data)
-                tbl = util.JSONToTable(file.Read('aaf.dat'))
-                AddInit(tbl)
+                AAF.Data = util.JSONToTable(file.Read('aaf.dat'))
+                AAF.AddInit(AAF.Data)
             end
         end,
-        function(error)
-            aafmsg('Github dont answer or file dont exists!')
+        function(err)
+			AAF.Msg(err)
+            AAF.Msg('Github dont answer or file dont exists!')
         end
     )
-    
 end
 
-if !tbl then 
-
-    aafmsg('No data found, trying to load from github') 
-    LoadGit()
-    
+if !AAF.Data then 
+    AAF.Msg('No data found, trying to load from github') 
+    AAF.LoadGit()
 else
-    
-    aafmsg('Adding files, server may freeze for few seconds')
-    AddInit(tbl)
-    
+	AAF.AddInit(AAF.Data)
 end
-
-
