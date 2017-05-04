@@ -2,7 +2,7 @@
 
 //Where to search custom resources:
 local addon = false //allow addons including (only workshop!)
-local other = false //allow sound/models folders to include
+local other = true //allow sound/models folders to include
 
 local what = 
 {
@@ -19,7 +19,7 @@ local tbl    = util.JSONToTable(file.Read('aaf.dat') or '')
 local addons = file.Find('addons/*','MOD')
 local try    = 0
 
-local function AddInit()
+local function AddInit(tbl)
 
     if addon then
         for v,k in pairs(addons) do
@@ -32,13 +32,13 @@ local function AddInit()
             aafmsg('Adding addon '..k)
         end
     end
-    
+
     local function read(path)
         path=path or ''
         local fs,ds = file.Find(path..'*','MOD')
         for k,f in pairs(fs) do
-            if table.HasValue(tbl,path..f) then continue end
-            resource.AddFile(path..f)
+            if table.HasValue(tbl,path..f) or tbl[path..f] then continue end
+            //resource.AddFile(path..f)
             aafmsg('Adding '..path..f)
         end 
         for k,d in pairs(ds) do
@@ -65,7 +65,8 @@ local function LoadGit()
             else
                 aafmsg('Data secussfully loaded!')
                 file.Write('aaf.dat',data)
-                AddInit()
+                tbl = util.JSONToTable(file.Read('aaf.dat'))
+                AddInit(tbl)
             end
         end,
         function(error)
@@ -80,6 +81,11 @@ if !tbl then
     aafmsg('No data found, trying to load from github') 
     LoadGit()
     
+else
+    
+    aafmsg('Adding files, server may freeze for few seconds')
+    AddInit(tbl)
+    
 end
 
-AddInit()
+
