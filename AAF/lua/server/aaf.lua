@@ -1,7 +1,7 @@
 //AutoAddFile 
 
 //Where to search custom resources:
-local addon = false //allow addons including (only workshop!)
+local addon = true //allow addons including (only workshop!)
 local other = true //allow sound/models folders to include
 
 local what = 
@@ -38,7 +38,7 @@ local function AddInit(tbl)
         local fs,ds = file.Find(path..'*','MOD')
         for k,f in pairs(fs) do
             if table.HasValue(tbl,path..f) or tbl[path..f] then continue end
-            //resource.AddFile(path..f)
+            resource.AddFile(path..f)
             aafmsg('Adding '..path..f)
         end 
         for k,d in pairs(ds) do
