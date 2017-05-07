@@ -99,8 +99,6 @@ function AAF.CheckUpdate()
 	end)
 end
 
-AAF.CheckUpdate()
-
 //if GetConVar("sv_downloadurl"):GetString() != '' then
 //	AAF.Msg(GetConVar("sv_downloadurl"):GetString()..' Detected FastDL! Aborting AAF!')
 //return end
@@ -109,5 +107,6 @@ if !AAF.Data then
     AAF.Msg('No data found, trying to load from github') 
     AAF.LoadGit()
 else
+	AAF.CheckUpdate()
 	AAF.AddInit(AAF.Data)
 end
