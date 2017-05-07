@@ -88,9 +88,9 @@ function AAF.LoadGit()
     )
 end
 
-if GetConVar("sv_downloadurl"):GetString() != '' then
-	AAF.Msg(GetConVar("sv_downloadurl"):GetString()..' Detected FastDL! Aborting AAF!')
-return end
+//if GetConVar("sv_downloadurl"):GetString() != '' then
+//	AAF.Msg(GetConVar("sv_downloadurl"):GetString()..' Detected FastDL! Aborting AAF!')
+//return end
 
 if !AAF.Data then 
     AAF.Msg('No data found, trying to load from github') 
