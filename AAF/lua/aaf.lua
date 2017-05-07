@@ -88,6 +88,19 @@ function AAF.LoadGit()
     )
 end
 
+function AAF.CheckUpdate()
+	http.Fetch('https://raw.githubusercontent.com/DC144/gmod/master/AAF/data/aaf.dat',function(data)
+		local a = util.JSONToTable(data)[1]
+		local b = util.JSONToTable(file.Read('aaf.dat'))[1]
+		if a != b then
+			AAF.Msg('New version is avaible. Downloading data...')
+			AAF.LoadGit()
+		end
+	end)
+end
+
+AAF.CheckUpdate()
+
 //if GetConVar("sv_downloadurl"):GetString() != '' then
 //	AAF.Msg(GetConVar("sv_downloadurl"):GetString()..' Detected FastDL! Aborting AAF!')
 //return end
