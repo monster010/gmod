@@ -15,28 +15,34 @@ for k,v in pairs(CRANK.Ranks) do
 	team.SetUp(v.team,v.name,v.color,true)
 end
 
-local unids = {'BOT','NULL','STEAM_ID_PENDING','UNKNOWN'}
-
 function CRANK.SID2CID(id)
-	if table.HasValue(unids,id) then return 0 end
-	local sidp = string.Split(id,':')
-	return tostring('7656119' .. 7960265728+tonumber(sidp[2])+(tonumber(sidp[3])*2))
+    if string.sub(id,1,7) != 'STEAM_0' then return end
+    local s = string.Split(id,':')
+    local a = tonumber(s[2])
+    local b = tonumber(s[3])
+    return '7656119'..7960265728+a+(b*2)
 end
 
 function CRANK.CID2SID(id)
-	local s = '76561197960'
-	if string.sub(id,1,#s) != s then return 'UNKNOWN' end
-	local a = id % 2 == 0 and 0 or 1
-	local b = (tonumber(id)-76561197960265728-a)/2
-	return 'STEAM_0:'.. a ..':'..(b+2)
+    if string.sub(id,1,7) != '7656119' then return end
+    local pre = string.sub(id,8,-1)
+    local a = pre%2
+    local b = (tonumber(pre)-7960265728-a)/2
+    return 'STEAM_0:'..a..':'..b
 end
 
 function CRANK.GetSteamData(id,callback)
-	local id = id
-	if string.match(id,'STEAM_0') then id = CRANK.SID2CID(id) end
-	http.Fetch('http://steamcommunity.com/profiles/'..id..'/?xml=1',function(body,len)
+	local link
+	if string.match(id,'STEAM_0') then link = 'http://steamcommunity.com/profiles/'..CRANK.SID2CID(id)..'/?xml=1'
+	elseif string.match(id,'7656119') then link = 'http://steamcommunity.com/profiles/'..id..'/?xml=1'
+	elseif string.match(id,'http://steamcommunity.com/') then link = id..'/?xml=1'
+	else link = 'http://steamcommunity.com/id/'..id..'/?xml=1' end
+	http.Fetch(link,function(body,len)
+		if string.match(body,'<error>') then return end
 		local t = {}
 		t.name = string.match(body,'<steamID><!%[CDATA%[(.-)%]%]></steamID>')
+		t.cid = string.match(body,'<steamID64>(.-)</steamID64>')
+		t.sid = CRANK.CID2SID(t.cid)
 		t.avataricon = string.match(body,'<avatarIcon><!%[CDATA%[(.-)%]%]></avatarIcon>')
 		t.avatarmedium = string.match(body,'<avatarMedium><!%[CDATA%[(.-)%]%]></avatarMedium>')
 		t.avatarfull = string.match(body,'<avatarFull><!%[CDATA%[(.-)%]%]></avatarFull>')
@@ -47,17 +53,24 @@ function CRANK.GetSteamData(id,callback)
 	end)
 end
 
-function CRANK.SetRank(sid,num)
-	if !isnumber(num) or !CRANK.Ranks[num] or CRANK.GetRank(sid) == num then return end
+function CRANK.SetRank(id,num)
+	if !isnumber(num) or !CRANK.Ranks[num] then return end
 	for k,v in pairs(player.GetAll()) do
-		if v:SteamID() == sid then
+		if v:SteamID() == id or v:SteamID64() == id then
 			v:SetRank(num)
 			return
 		end
 	end
-	local old = CRANK.Ranks[CRANK.GetRank(sid)]
-	util.SetPData(sid,'CRANK',num)
-	CRANK.GetSteamData(sid,function(tab) 
+	CRANK.GetSteamData(id,function(tab)
+		if CRANK.GetRank(tab.sid) == num then return end
+		for k,v in pairs(player.GetAll()) do
+			if v:SteamID() == tab.sid then
+				v:SetRank(num)
+				return
+			end
+		end
+		local old = CRANK.Ranks[CRANK.GetRank(tab.sid)]
+		util.SetPData(tab.sid,'CRANK',num)
 		ChatNet(old.color,tab.name,Color(150,150,150),' was ranked to ',CRANK.Ranks[num].color,CRANK.Ranks[num].name)
 	end)
 end

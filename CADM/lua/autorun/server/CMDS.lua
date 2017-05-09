@@ -184,7 +184,7 @@ hook.Add('PlayerSay','CMDS',function(ply,str)
 		if validate and ply:IsSuperAdmin() then
 			pseudoent:SetRank(tonumber(word[3]))
 		end
-		if word[2] and string.match(word[2],'STEAM_0') and word[3] then
+		if !validate and word[2] and word[3] then
 			CRANK.SetRank(word[2],tonumber(word[3]))
 		end
 		return ''
