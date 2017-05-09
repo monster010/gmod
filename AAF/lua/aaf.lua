@@ -2,8 +2,11 @@
 
 AAF = {}
 
+AAF.enable    = true
+
 AAF.addon	  = true //allow addons including (only workshop!) //8192 MAX includes
 AAF.other 	  = true //allow sound/models folders to include
+AAF.update    = true //autoupdate
 AAF.massages  = true //massages in console
 
 //Where to search custom resources:
@@ -23,6 +26,39 @@ AAF.blacklist =
 
 //-----------------\\
 --don't touch below--
+if !file.Exists('aafsettings.txt','DATA') then
+	file.Write('aafsettings.txt',util.TableToJSON(AAF))
+end
+
+//SHIT CODE START
+local function Save(x,y,pl)
+	if !pl:IsAdmin() then pl:ChatPrint('[AAF] Only Admin can change AAF Setting!') return end
+	AAF[x] = !AAF[x]
+	pl:ChatPrint('[AAF] '..y..' are now '..Either(AAF[x],'Enabled!','Disabled!'))
+	file.Write('aafsettings.txt',util.TableToJSON(AAF))
+end
+
+AAF = util.JSONToTable(file.Read('aafsettings.txt'))
+
+concommand.Add('aaf_enable',  function(pl) Save('enable','Addon',pl)            end)
+concommand.Add('aaf_addon',   function(pl) Save('addon','Addons include',pl)    end)
+concommand.Add('aaf_other',   function(pl) Save('other','Resources include',pl) end)
+concommand.Add('aaf_massages',function(pl) Save('massages','Massages',pl)       end)
+
+concommand.Add('aaf_addid',function(pl) 
+	AAF.blacklist[id] = true 
+	pl:ChatPrint('[AAF] '..id..' workshop id added to blacklist!') 
+	file.Write('aafsettings.txt',util.TableToJSON(AAF))
+end)
+	
+concommand.Add('aaf_removeid',function(pl) 
+	AAF.blacklist[id] = nil        
+	pl:ChatPrint('[AAF] '..id..' workshop id removed to blacklist!') 	
+	file.Write('aafsettings.txt',util.TableToJSON(AAF))
+end)
+//SHIT CODE END
+
+if !AAF.enable then return end
 
 function AAF.Msg(what) 
 	if !AAF.massages then return end
@@ -30,7 +66,7 @@ function AAF.Msg(what)
 end
 
 AAF.Try    = 0
-AAF.Data   = util.JSONToTable(file.Read('aaf.dat') or '')
+AAFData   = util.JSONToTable(file.Read('aaf.dat') or '')
 AAF.addons = file.Find('addons/*','MOD')
 
 function AAF.AddInit(tbl)
@@ -77,8 +113,8 @@ function AAF.LoadGit()
             else
                 AAF.Msg('Data secussfully loaded!')
                 file.Write('aaf.dat',data)
-                AAF.Data = util.JSONToTable(file.Read('aaf.dat'))
-                AAF.AddInit(AAF.Data)
+                AAFData = util.JSONToTable(file.Read('aaf.dat'))
+                AAF.AddInit(AAFData)
             end
         end,
         function(err)
@@ -89,6 +125,7 @@ function AAF.LoadGit()
 end
 
 function AAF.CheckUpdate()
+	if !AAF.update then return end
 	http.Fetch('https://raw.githubusercontent.com/DC144/gmod/master/AAF/data/aaf.dat',function(data)
 		local a = util.JSONToTable(data)[1]
 		local b = util.JSONToTable(file.Read('aaf.dat'))[1]
@@ -103,10 +140,10 @@ end
 //	AAF.Msg(GetConVar("sv_downloadurl"):GetString()..' Detected FastDL! Aborting AAF!')
 //return end
 
-if !AAF.Data then 
+if !AAFData then 
     AAF.Msg('No data found, trying to load from github') 
     AAF.LoadGit()
 else
 	AAF.CheckUpdate()
-	AAF.AddInit(AAF.Data)
+	AAF.AddInit(AAFData)
 end

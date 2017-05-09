@@ -4,3 +4,6 @@ if SERVER then
 		hook.Remove('Think','AAF')
 	end)
 end
+if CLIENT then
+	AddCSLuaFile('aaf_client.lua')
+end
